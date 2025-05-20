@@ -1,10 +1,10 @@
-from flask import abort, Blueprint, make_response, request, Response
+from flask import abort, Blueprint, jsonify, make_response, request, Response
 from app.models.task import Task
 from app.models.goal import Goal
 from ..db import db
 from sqlalchemy import cast, String, Integer
 from .route_utilities import validate_model
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import requests
 
@@ -77,14 +77,13 @@ def get_one_task(task_id):
 def mark_task_as_complete(task_id):
     task = validate_model(Task, task_id)
 
-    # task.is_complete = True
-    task.completed_at = datetime.now()
-
+    task.is_complete = True
+    task.completed_at = datetime.now(timezone.utc)
     db.session.commit()
 
     slack_token = os.environ.get("SLACKBOT_API_TOKEN")
-    slack_channel = "sno-task-tracker-bot2"
-    slack_text = f"Someone just completed the task {task.title}! 🎉"
+    slack_channel = os.getenv("SLACK_CHANNEL", "#sno-task-tracker-bot2")
+    slack_text = f"Someone just completed the task: *{task.title}* ! 🎉"
 
     if slack_token:
         url =  "https://slack.com/api/chat.postMessage"
@@ -92,15 +91,24 @@ def mark_task_as_complete(task_id):
             "Authorization": f"Bearer {slack_token}",
             "Content-Type": "application/json"
         }
-        message_request_body = {
+        slack_data = {
             "channel": slack_channel,
             "text": slack_text
-
         }
-        requests.post(url, headers=headers, json=message_request_body)
-    
-    return Response(status=204, mimetype="application/json")
-    # return {"task": task.to_dict()}, 200
+        slack_response = requests.post(url, headers=headers, json=slack_data)
+        
+        if not slack_response.ok:
+            print("Slack error:", slack_response.text)
+
+    response_body = {
+        "id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "is_complete": task.is_complete,
+        "completed_at": task.completed_at.isoformat()
+    }
+
+    return make_response(response_body, 200)
 
 @bp.patch("/<task_id>/mark_incomplete")
 def mark_task_as_incomplete(task_id):
