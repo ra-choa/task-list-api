@@ -1,4 +1,4 @@
-#!/bin/bash
+d#!/bin/bash
 
 # must match the name of the service for the database in
 # the docker-compose.yml file
