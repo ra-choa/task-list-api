@@ -14,4 +14,5 @@ def validate_model(cls, model_id):
     if not model:
         response = {"message": f"{cls.__name__} {model_id} not found"}
         abort(make_response(response, 404))
+    
     return model

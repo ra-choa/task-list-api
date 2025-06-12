@@ -2,11 +2,8 @@ from flask import abort, Blueprint, make_response, request, Response
 from app.models.task import Task
 from app.models.goal import Goal
 from ..db import db
-from sqlalchemy import cast, String, Integer
 from .route_utilities import validate_model
-from datetime import datetime
-import os
-import requests
+
 
 bp = Blueprint("goals_bp", __name__, url_prefix = "/goals")
 
@@ -31,13 +28,11 @@ def create_goal():
 def get_one_goal_by_id(goal_id):
     goal = validate_model(Goal, goal_id)
 
-    # response = [goal.to_dict() for goal in goal.goals]
     return {"goal": goal.to_dict()}, 200
 
 @bp.get("")
 def get_all_goals():
     query = db.select(Goal)
-    goals = db.session.execute(query).scalars().all()
 
     sort_order_param = request.args.get("sort", "asc")
     if sort_order_param == "desc":
@@ -71,6 +66,7 @@ def update_goal(goal_id):
 @bp.delete("/<goal_id>")
 def delete_goal(goal_id):
     goal = validate_model(Goal, goal_id)
+    
     db.session.delete(goal)
     db.session.commit()
 

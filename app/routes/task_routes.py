@@ -1,8 +1,6 @@
-from flask import abort, Blueprint, jsonify, make_response, request, Response
+from flask import abort, Blueprint, make_response, request, Response
 from app.models.task import Task
-from app.models.goal import Goal
 from ..db import db
-from sqlalchemy import cast, String, Integer
 from .route_utilities import validate_model
 from datetime import datetime, timezone
 import os
@@ -28,7 +26,6 @@ def create_task():
 @bp.get("")
 def get_all_tasks():
     query = db.select(Task)
-    tasks = db.session.execute(query).scalars().all()
 
     sort_order_param = request.args.get("sort", "asc")
     if sort_order_param == "desc":
@@ -77,7 +74,6 @@ def get_one_task(task_id):
 def mark_task_as_complete(task_id):
     task = validate_model(Task, task_id)
 
-    task.is_complete = True
     task.completed_at = datetime.now(timezone.utc)
     db.session.commit()
 

@@ -3,15 +3,15 @@ from ..db import db
 from .goal import Goal
 from datetime import datetime
 from typing import Optional
+from sqlalchemy import ForeignKey
 
 class Task(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str]
     description: Mapped[str]
-    completed_at: Mapped[datetime] = mapped_column(default=None, nullable=True)
-    is_complete: Mapped[bool] = mapped_column(default=False, nullable=False)
+    completed_at: Mapped[Optional[datetime]]
 
-    goal_id: Mapped[Optional[int]] = mapped_column(db.Integer, db.ForeignKey("goal.id"), nullable=True)
+    goal_id: Mapped[Optional[int]] = mapped_column(ForeignKey("goal.id"))
     goal: Mapped[Optional["Goal"]] = relationship("Goal", back_populates="tasks")
 
     def to_dict(self):
@@ -19,8 +19,7 @@ class Task(db.Model):
         task_as_dict["id"] = self.id
         task_as_dict["title"] = self.title
         task_as_dict["description"] = self.description
-        # task_as_dict["completed_at"] = self.completed_at.isoformat() if self.completed_at else None
-        task_as_dict["is_complete"] = self.is_complete
+        task_as_dict["is_complete"] = True if self.completed_at is not None else False
 
         # if self.goal_id is not None:
         if self.goal_id:
@@ -30,12 +29,9 @@ class Task(db.Model):
     
     @classmethod
     def from_dict(cls, task_data):
-        if "title" not in task_data or "description" not in task_data:
-            raise KeyError("title or description")
         new_task = cls(title=task_data["title"],
                     description=task_data["description"],
-                    completed_at=task_data.get("completed_at", None),
-                    is_complete=task_data.get("is_complete", False),
+                    completed_at=task_data.get("completed_at", None)
         )
 
         return new_task
