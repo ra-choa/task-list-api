@@ -20,8 +20,6 @@ class Goal(db.Model):
 
     @classmethod
     def from_dict(cls, goal_data):
-        if "title" not in goal_data:
-            raise KeyError("title")
         new_goal = cls(title=goal_data["title"])
 
         return new_goal
