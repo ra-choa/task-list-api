@@ -4,7 +4,6 @@ from .models.task import Task
 from .models.goal import Goal
 from .routes.task_routes import bp as tasks_bp
 from .routes.goal_routes import bp as goals_bp
-# from .routes.goal_routes import bp as goals_bp
 import os
 from dotenv import load_dotenv
 load_dotenv()
