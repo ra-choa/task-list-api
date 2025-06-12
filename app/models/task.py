@@ -6,8 +6,8 @@ from typing import Optional
 
 class Task(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    title: Mapped[str] = mapped_column(db.String, nullable=False)
-    description: Mapped[str] = mapped_column(db.String, nullable=False)
+    title: Mapped[str]
+    description: Mapped[str]
     completed_at: Mapped[datetime] = mapped_column(default=None, nullable=True)
     is_complete: Mapped[bool] = mapped_column(default=False, nullable=False)
 
