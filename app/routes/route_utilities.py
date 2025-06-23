@@ -20,6 +20,19 @@ def validate_model(cls, model_id):
     return model
 
 def create_model(cls, model_data):
+    required_fields_by_model = {
+        "Task": ["title", "description"],
+        "Goal": ["title"]
+    }
+
+    model_name = cls.__name__
+    required_fields = required_fields_by_model.get(model_name, [])
+
+    for field in required_fields:
+        if not model_data.get(field):
+            response = {"details": "Invalid data"}
+            abort(make_response(response, 400))
+
     try:
         new_model = cls.from_dict(model_data)
     except KeyError as e:
@@ -29,7 +42,7 @@ def create_model(cls, model_data):
     db.session.add(new_model)
     db.session.commit()
 
-    return new_model.to_dict(), 201
+    return {model_name.lower(): new_model.to_dict()}, 201
 
 
 def get_models_with_filters(cls, filters=None, sort_attr="id"):
