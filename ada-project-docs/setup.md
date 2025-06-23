@@ -48,7 +48,7 @@ Create a file named `.env`.
 Create two environment variables that will hold your database URLs.
 
 1. `SQLALCHEMY_DATABASE_URI` to hold the path to your development database
-1. `SQLALCHEMY_TEST_DATABASE_URI` to hold the path to your development database
+1. `SQLALCHEMY_TEST_DATABASE_URI` to hold the path to your test development database
 
 Your `.env` may look like this:
 

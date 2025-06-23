@@ -1,7 +1,7 @@
 from flask import abort, Blueprint, make_response, request, Response
 from app.models.task import Task
 from ..db import db
-from .route_utilities import validate_model
+from .route_utilities import validate_model, create_model,get_models_with_filters, send_slack_notification, update_model
 from datetime import datetime, timezone
 import os
 import requests
@@ -11,58 +11,16 @@ bp = Blueprint("tasks_bp", __name__, url_prefix = "/tasks")
 @bp.post("")
 def create_task():
     request_body = request.get_json()
-    try:
-        new_task = Task.from_dict(request_body)
-
-    except KeyError as error:
-        response = {"details": "Invalid data"}
-        abort(make_response(response, 400))
-
-    db.session.add(new_task)
-    db.session.commit()
-
-    return {"task": new_task.to_dict()}, 201
+    
+    return create_model(Task, request_body)
 
 @bp.get("")
 def get_all_tasks():
-    query = db.select(Task)
-
-    sort_order_param = request.args.get("sort", "asc")
-    if sort_order_param == "desc":
-        query = query.order_by(Task.title.desc())
-    else:
-        query = query.order_by(Task.title.asc())
-
-    title_param = request.args.get("title")
-    if title_param:
-        query = query.where(Task.title.ilike(f"%{title_param}%"))
-    
-    description_param = request.args.get("description")
-    if description_param:
-        query = query.where(Task.description.ilike(f"%{description_param}%"))
-
-    completed_at_param =request.args.get("completed_at")
-    if completed_at_param:
-        query = query.where(Task.completed_at.ilike(f"%{completed_at_param}%"))
-
-    is_complete_param = request.args.get("is_complete")
-    if is_complete_param:
-        # is_complete_bool = is_complete_param.lower() == "true"
-        # query = query.where(Task.is_complete == is_complete_bool)
-
-        if is_complete_param.lower() == "true":
-            query = query.where(Task.task_completed == True)
-        elif is_complete_param.lower() == "false":
-            query = query.where(Task.task_completed == False)
-
-    query = query.order_by(Task.id)
-    tasks = db.session.scalars(query)
-
-    tasks_response = []
-    for task in tasks:
-        tasks_response.append(task.to_dict())
-    return tasks_response, 200
-
+    filters = request.args.to_dict()
+    return get_models_with_filters(
+            Task, 
+            filters,
+            sort_attr="title"), 200
 
 @bp.get("/<task_id>")
 def get_one_task(task_id):
@@ -77,56 +35,26 @@ def mark_task_as_complete(task_id):
     task.completed_at = datetime.now(timezone.utc)
     db.session.commit()
 
-    slack_token = os.environ.get("SLACKBOT_API_TOKEN")
-    slack_channel = os.getenv("SLACK_CHANNEL", "#sno-task-tracker-bot2")
-    slack_text = f"Someone just completed the task: *{task.title}* ! 🎉"
+    message = f"Someone just completed the task: *{task.title}* ! 🎉"
+    send_slack_notification(message)
 
-    if slack_token:
-        url =  "https://slack.com/api/chat.postMessage"
-        headers = {
-            "Authorization": f"Bearer {slack_token}",
-            "Content-Type": "application/json"
-        }
-        slack_data = {
-            "channel": slack_channel,
-            "text": slack_text
-        }
-        slack_response = requests.post(url, headers=headers, json=slack_data)
-        
-        if not slack_response.ok:
-            print("Slack error:", slack_response.text)
-
-    response_body = {
-        "id": task.id,
-        "title": task.title,
-        "description": task.description,
-        "is_complete": task.is_complete,
-        "completed_at": task.completed_at.isoformat()
-    }
-
-    return make_response(response_body, 200)
+    return make_response(task.to_dict(), 200)
 
 @bp.patch("/<task_id>/mark_incomplete")
 def mark_task_as_incomplete(task_id):
     task = validate_model(Task, task_id)
     
-    # task.is_complete = False
     task.completed_at = None
 
     db.session.commit()
     return Response(status=204, mimetype="application/json")
-    # return {"task": task.to_dict()}, 200
 
 @bp.put("/<task_id>")
 def update_task(task_id):
     task = validate_model(Task, task_id)
     request_body = request.get_json()
 
-    task.title = request_body["title"]
-    task.description = request_body["description"]
-    db.session.commit()
-
-    return Response(status=204, mimetype="application/json")
+    return update_model(task, request_body)
 
 @bp.delete("/<task_id>")
 def delete_task(task_id):
