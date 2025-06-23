@@ -5,6 +5,8 @@ if TYPE_CHECKING:
     from .task import Task
 
 class Goal(db.Model):
+    __required_fields__ = ["title"]
+    
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str]
 

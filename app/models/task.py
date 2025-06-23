@@ -6,6 +6,8 @@ from typing import Optional
 from sqlalchemy import ForeignKey
 
 class Task(db.Model):
+    __required_fields__ = ["title", "description"]
+    
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str]
     description: Mapped[str]

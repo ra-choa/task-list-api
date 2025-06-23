@@ -20,13 +20,7 @@ def validate_model(cls, model_id):
     return model
 
 def create_model(cls, model_data):
-    required_fields_by_model = {
-        "Task": ["title", "description"],
-        "Goal": ["title"]
-    }
-
-    model_name = cls.__name__
-    required_fields = required_fields_by_model.get(model_name, [])
+    required_fields = getattr(cls, "__required_fields__", [])
 
     for field in required_fields:
         if not model_data.get(field):
@@ -42,7 +36,7 @@ def create_model(cls, model_data):
     db.session.add(new_model)
     db.session.commit()
 
-    return {model_name.lower(): new_model.to_dict()}, 201
+    return {"task" if cls.__name__ == "Task" else "goal": new_model.to_dict()}, 201
 
 
 def get_models_with_filters(cls, filters=None, sort_attr="id"):
