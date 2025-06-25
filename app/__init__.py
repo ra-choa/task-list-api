@@ -15,8 +15,8 @@ def create_app(config=None):
     CORS(app)
 
     app.config['CORS_HEADERS'] = 'Content-Type'
-    # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
 
     if config:
         # Merge `config` into the app's configuration
